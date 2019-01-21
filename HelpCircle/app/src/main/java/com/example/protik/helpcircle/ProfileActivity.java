@@ -39,6 +39,7 @@ public class ProfileActivity extends AppCompatActivity {
     private String mCurrentState;
     private DatabaseReference mFriendRequestDatabase;
     private DatabaseReference mFriendDatabase;
+    private DatabaseReference mFriendReqReceivedDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +66,7 @@ public class ProfileActivity extends AppCompatActivity {
         mCurrentUser = FirebaseAuth.getInstance().getCurrentUser();
         mFriendRequestDatabase = FirebaseDatabase.getInstance().getReference().child("Friend_Req");
         mFriendDatabase = FirebaseDatabase.getInstance().getReference().child("Friends");
+        mFriendReqReceivedDatabase = FirebaseDatabase.getInstance().getReference().child("Received_Friend_Req");
         mCurrentState = "not_friend";
         cancelBtn.setVisibility(View.INVISIBLE);
         cancelBtn.setEnabled(false);
@@ -161,13 +163,25 @@ public class ProfileActivity extends AppCompatActivity {
                         mFriendRequestDatabase.child(uId).child(mCurrentUser.getUid()).child("request_type").setValue("received").addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {
-                                Toast.makeText(getApplicationContext(), "Successfully sent request", Toast.LENGTH_SHORT).show();
-                                sendButton.setEnabled(true);
-                                mCurrentState = "req_sent";
-                                sendButton.setText("Cancel Request");
+                                //
+                                String currentDate = DateFormat.getDateTimeInstance().format(new Date());
+                                Map<String, String> receivedReqMap = new HashMap<>();
+                                receivedReqMap.put("date", currentDate);
+                                receivedReqMap.put("user_id", mCurrentUser.getUid());
+                                mFriendReqReceivedDatabase.child(uId).child(mCurrentUser.getUid()).setValue(receivedReqMap).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
 
-                                cancelBtn.setVisibility(View.INVISIBLE);
-                                cancelBtn.setEnabled(false);
+                                        Toast.makeText(getApplicationContext(), "Successfully sent request", Toast.LENGTH_SHORT).show();
+                                        sendButton.setEnabled(true);
+                                        mCurrentState = "req_sent";
+                                        sendButton.setText("Cancel Request");
+
+                                        cancelBtn.setVisibility(View.INVISIBLE);
+                                        cancelBtn.setEnabled(false);
+                                    }
+                                });
+
                             }
                         });
 
@@ -188,12 +202,19 @@ public class ProfileActivity extends AppCompatActivity {
                         @Override
                         public void onSuccess(Void aVoid) {
 
-                            sendButton.setEnabled(true);
-                            mCurrentState = "not_friend";
-                            sendButton.setText("Add Friend");
+                            mFriendReqReceivedDatabase.child(uId).child(mCurrentUser.getUid()).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
 
-                            cancelBtn.setVisibility(View.INVISIBLE);
-                            cancelBtn.setEnabled(false);
+                                    sendButton.setEnabled(true);
+                                    mCurrentState = "not_friend";
+                                    sendButton.setText("Add Friend");
+
+                                    cancelBtn.setVisibility(View.INVISIBLE);
+                                    cancelBtn.setEnabled(false);
+                                }
+                            });
+
                         }
                     });
                 }

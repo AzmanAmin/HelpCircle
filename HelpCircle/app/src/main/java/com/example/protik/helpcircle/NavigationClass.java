@@ -43,7 +43,9 @@ public class NavigationClass implements NavigationView.OnNavigationItemSelectedL
 
         else if(item.getItemId() == R.id.requests)
         {
-            Toast.makeText(context, "Requests", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Friend Request", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(context, FriendRequestActivity.class);
+            context.startActivity(intent);
         }
 
         else if(item.getItemId() == R.id.logOut)

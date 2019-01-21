@@ -27,7 +27,6 @@ public class FriendRecyclerAdapter extends RecyclerView.Adapter<FriendRecyclerAd
     private FirebaseFirestore mFireStore;
     private DatabaseReference mFriendDatabase;
     private FirebaseUser mCurrentUser;
-    String userName, phoneData;
 
     public List<Friend> friend_list;
 
@@ -48,22 +47,6 @@ public class FriendRecyclerAdapter extends RecyclerView.Adapter<FriendRecyclerAd
 
         String date = friend_list.get(position).getDate();
         String userId = friend_list.get(position).getUser_id();
-
-//        String userName, phoneData;
-
-        mFireStore = FirebaseFirestore.getInstance();
-        mFireStore.collection("Users").document(userId).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-
-                if (task.isSuccessful()) {
-                    userName = task.getResult().getString("name");
-                    phoneData = task.getResult().getString("phone");
-                } else {
-                    String error = task.getException().getMessage();
-                }
-            }
-        });
 
         holder.setText(userId);
     }
@@ -89,8 +72,23 @@ public class FriendRecyclerAdapter extends RecyclerView.Adapter<FriendRecyclerAd
             phoneView = mView.findViewById(R.id.mobileId);
             unfriendBtn = mView.findViewById(R.id.unfriendBtnId);
 
-            nameView.setText(userName);
-            phoneView.setText(phoneData);
+            mFireStore = FirebaseFirestore.getInstance();
+            mFireStore.collection("Users").document(userData).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+
+                    if (task.isSuccessful()) {
+                        String userName = task.getResult().getString("name");
+                        String phoneData = task.getResult().getString("phone");
+
+                        //Toast.makeText(mView.getContext(), "name: "+ userName, Toast.LENGTH_SHORT).show();
+                        nameView.setText(userName);
+                        phoneView.setText(phoneData);
+                    } else {
+                        String error = task.getException().getMessage();
+                    }
+                }
+            });
 
             unfriendBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -102,8 +100,6 @@ public class FriendRecyclerAdapter extends RecyclerView.Adapter<FriendRecyclerAd
     }
 
     public void deleteFriend(final View view, final String uId) {
-
-        Toast.makeText(view.getContext(), "hehe", Toast.LENGTH_SHORT).show();
 
         mCurrentUser = FirebaseAuth.getInstance().getCurrentUser();
         mFriendDatabase = FirebaseDatabase.getInstance().getReference().child("Friends");

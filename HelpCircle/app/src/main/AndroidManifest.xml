@@ -21,7 +21,8 @@
         <activity android:name=".AllUsersActivity" />
         <activity android:name=".MyProfile" />
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".FriendsActivity"></activity>
+        <activity android:name=".FriendsActivity" />
+        <activity android:name=".FriendRequestActivity"></activity>
     </application>
 
 </manifest>

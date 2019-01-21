@@ -13,51 +13,49 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FriendsActivity extends AppCompatActivity {
+public class FriendRequestActivity extends AppCompatActivity {
 
-    private RecyclerView friend_list_view;
-    private List<Friend> friend_list;
-    private List<String> friend_id;
+    private RecyclerView friend_request_list_view;
+    private List<FriendRequest> friend_request_list;
+    private List<String> friend_request_id;
 
-    FriendRecyclerAdapter friendRecyclerAdapter;
+    FriendRequestRecyclerAdapter friendRequestRecyclerAdapter;
 
-    private DatabaseReference mFriendDatabase;
+    private DatabaseReference mFriendRequestReceivedDatabase;
     private FirebaseUser mCurrentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_friends);
+        setContentView(R.layout.activity_friend_request);
 
-        friend_id = new ArrayList<>();
-        friend_list = new ArrayList<>();
-        friend_list_view = findViewById(R.id.friend_list_view);
+        friend_request_id = new ArrayList<>();
+        friend_request_list = new ArrayList<>();
+        friend_request_list_view = findViewById(R.id.friend_request_list_view);
 
-        friendRecyclerAdapter = new FriendRecyclerAdapter(friend_list);
-        friend_list_view.setLayoutManager(new LinearLayoutManager(this));
-        friend_list_view.setAdapter(friendRecyclerAdapter);
+        friendRequestRecyclerAdapter = new FriendRequestRecyclerAdapter(friend_request_list);
+        friend_request_list_view.setLayoutManager(new LinearLayoutManager(this));
+        friend_request_list_view.setAdapter(friendRequestRecyclerAdapter);
 
         mCurrentUser = FirebaseAuth.getInstance().getCurrentUser();
-        mFriendDatabase = FirebaseDatabase.getInstance().getReference().child("Friends").child(mCurrentUser.getUid());
-        mFriendDatabase.addChildEventListener(new ChildEventListener() {
+        mFriendRequestReceivedDatabase = FirebaseDatabase.getInstance().getReference().child("Received_Friend_Req").child(mCurrentUser.getUid());
+        mFriendRequestReceivedDatabase.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
                 Toast.makeText(getApplicationContext(), "key: " + dataSnapshot.getKey(), Toast.LENGTH_LONG).show();
 
                 //String key = dataSnapshot.getKey();
-                Friend friend = dataSnapshot.getValue(Friend.class);
+                FriendRequest friendRequest = dataSnapshot.getValue(FriendRequest.class);
 
-                friend_id.add(dataSnapshot.getKey());
-                friend_list.add(friend);
+                friend_request_id.add(dataSnapshot.getKey());
+                friend_request_list.add(friendRequest);
 
-                friendRecyclerAdapter.notifyDataSetChanged();
+                friendRequestRecyclerAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -68,15 +66,15 @@ public class FriendsActivity extends AppCompatActivity {
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
 
-                int friendIndex = friend_id.indexOf(dataSnapshot.getKey());
+                int friendReqIndex = friend_request_id.indexOf(dataSnapshot.getKey());
 
-                if (friendIndex > -1) {
+                if (friendReqIndex > -1) {
 
-                    friend_id.remove(friendIndex);
-                    friend_list.remove(friendIndex);
+                    friend_request_id.remove(friendReqIndex);
+                    friend_request_list.remove(friendReqIndex);
 
                     //friendRecyclerAdapter.notifyDataSetChanged();
-                    friendRecyclerAdapter.notifyItemRemoved(friendIndex);
+                    friendRequestRecyclerAdapter.notifyItemRemoved(friendReqIndex);
                 }
             }
 
