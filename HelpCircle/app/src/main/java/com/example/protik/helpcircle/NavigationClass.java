@@ -31,6 +31,8 @@ public class NavigationClass implements NavigationView.OnNavigationItemSelectedL
         else if(item.getItemId() == R.id.searchFriends)
         {
             Toast.makeText(context, "Search Friends", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(context, AllUsersActivity.class);
+            context.startActivity(intent);
         }
 
         else if(item.getItemId() == R.id.friends)
@@ -57,7 +59,6 @@ public class NavigationClass implements NavigationView.OnNavigationItemSelectedL
             Toast.makeText(context,"Logged Out..!!",Toast.LENGTH_SHORT).show();
             //context.finish();
             Intent intent = new Intent(context, LoginActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             context.startActivity(intent);
         }
 

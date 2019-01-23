@@ -248,12 +248,18 @@ public class ProfileActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccess(Void aVoid) {
 
-                                        sendButton.setEnabled(true);
-                                        mCurrentState = "friends";
-                                        sendButton.setText("UnFriend");
+                                        mFriendReqReceivedDatabase.child(mCurrentUser.getUid()).child(uId).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
 
-                                        cancelBtn.setVisibility(View.INVISIBLE);
-                                        cancelBtn.setEnabled(false);
+                                                sendButton.setEnabled(true);
+                                                mCurrentState = "friends";
+                                                sendButton.setText("UnFriend");
+
+                                                cancelBtn.setVisibility(View.INVISIBLE);
+                                                cancelBtn.setEnabled(false);
+                                            }
+                                        });
                                     }
                                 });
                             }

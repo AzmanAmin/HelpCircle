@@ -118,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else if (v.getId() == R.id.iv_search) {
             Toast.makeText(MainActivity.this, "search", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, AllUsersActivity.class));
         }
         else if (v.getId() == R.id.iv_location) {
             //Toast.makeText(MainActivity.this, "location", Toast.LENGTH_SHORT).show();

@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.widget.Toast;
 
 import com.google.firebase.firestore.DocumentChange;
@@ -17,6 +18,7 @@ import java.util.List;
 
 public class AllUsersActivity extends AppCompatActivity {
 
+    private SearchView searchView;
     private RecyclerView user_list_view;
     private List<User> user_list;
     UserRecyclerAdapter userRecyclerAdapter;
@@ -27,6 +29,8 @@ public class AllUsersActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_all_users);
+
+        searchView = findViewById(R.id.searchId);
 
         user_list = new ArrayList<>();
         user_list_view = findViewById(R.id.user_list_view);
@@ -51,6 +55,20 @@ public class AllUsersActivity extends AppCompatActivity {
                         userRecyclerAdapter.notifyDataSetChanged();
                     }
                 }
+            }
+        });
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                //Toast.makeText(getApplicationContext(), "" + s, Toast.LENGTH_SHORT).show();
+                userRecyclerAdapter.getFilter().filter(s);
+                return false;
             }
         });
     }

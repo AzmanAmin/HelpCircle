@@ -3,10 +3,13 @@ package com.example.protik.helpcircle;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,22 +25,20 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-public class UserRecyclerAdapter extends RecyclerView.Adapter<UserRecyclerAdapter.ViewHolder> {
-
-    private String mCurrentState;
-    private DatabaseReference mFriendRequestDatabase;
-    private DatabaseReference mFriendDatabase;
-    private FirebaseUser mCurrentUser;
-    private Button sendButton, declineButton;
-
+public class UserRecyclerAdapter extends RecyclerView.Adapter<UserRecyclerAdapter.ViewHolder> implements Filterable {
 
     public List<User> user_list;
+    public List<User> user_list_full;
 
     public UserRecyclerAdapter(List<User> user_list) {
         this.user_list = user_list;
+        //user_list_full = new ArrayList<>(user_list);
+        this.user_list_full = user_list;
     }
 
     @NonNull
@@ -80,8 +81,6 @@ public class UserRecyclerAdapter extends RecyclerView.Adapter<UserRecyclerAdapte
             nameView = mView.findViewById(R.id.nameId);
             phoneView = mView.findViewById(R.id.phoneId);
             emailView = mView.findViewById(R.id.emailId);
-//            sendButton = mView.findViewById(R.id.sendBtnId);
-//            declineButton = mView.findViewById(R.id.declineBtnId);
 
             nameView.setText(nameTxt);
             phoneView.setText(phoneTxt);
@@ -98,136 +97,51 @@ public class UserRecyclerAdapter extends RecyclerView.Adapter<UserRecyclerAdapte
                 }
             });
 
-//            mCurrentUser = FirebaseAuth.getInstance().getCurrentUser();
-//            mFriendRequestDatabase = FirebaseDatabase.getInstance().getReference().child("Friend_Req");
-//            mFriendDatabase = FirebaseDatabase.getInstance().getReference().child("Friends");
-//            mCurrentState = "not_friend";
-//
-//            //Friends Part
-//            mFriendRequestDatabase.child(mCurrentUser.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                    if (dataSnapshot.hasChild(userId)) {
-//
-//                        String req_type = dataSnapshot.child(userId).child("request_type").getValue().toString();
-//
-//                        if (req_type.equals("received")) {
-//
-//                            mCurrentState = "req_received";
-//                            sendButton.setText("Accept Request");
-//
-//                        } else if (req_type.equals("sent")){
-//
-//                            mCurrentState = "req_sent";
-//                            sendButton.setText("Cancel Request");
-//                        }
-//                    }
-//                }
-//
-//                @Override
-//                public void onCancelled(DatabaseError databaseError) {
-//
-//                }
-//            });
-//
-//            sendButton.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    createFriends(userId, mView);
-//                }
-//            });
-//
-//            declineButton.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    Toast.makeText(mView.getContext(), "Decline korsi", Toast.LENGTH_LONG).show();
-//                }
-//            });
-
         }
     }
 
-    public void createFriends(final String uId, final View view) {
-        Toast.makeText(view.getContext(), "Id: " + uId, Toast.LENGTH_LONG).show();
 
-        sendButton.setEnabled(false);
+    @Override
+    public Filter getFilter() {
+        return userFilter;
+    }
 
-        if (mCurrentState.equals("not_friend")) {
+    private Filter userFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence charSequence) {
 
-            mFriendRequestDatabase.child(mCurrentUser.getUid()).child(uId).child("request_type").setValue("sent").addOnCompleteListener(new OnCompleteListener<Void>() {
-                @Override
-                public void onComplete(@NonNull Task<Void> task) {
+            FilterResults results = new FilterResults();
 
-                    if (task.isSuccessful()) {
+            List<User> filteredList = new ArrayList<>();
 
-                        mFriendRequestDatabase.child(uId).child(mCurrentUser.getUid()).child("request_type").setValue("received").addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                Toast.makeText(view.getContext(), "Successfully sent request", Toast.LENGTH_SHORT).show();
-                                sendButton.setEnabled(true);
-                                mCurrentState = "req_sent";
-                                sendButton.setText("Cancel Request");
-                            }
-                        });
+            if (charSequence == null || charSequence.length() == 0) {
+                filteredList.addAll(user_list_full);
 
-                    } else {
-                        Toast.makeText(view.getContext(), "Failed Sending Request", Toast.LENGTH_SHORT).show();
+            } else {
+
+                String filterPattern = charSequence.toString().toLowerCase().trim();
+
+                for (User item : user_list_full) {
+
+//                    Log.i("taga", item.getName());
+                    if (item.getName().toLowerCase().contains(filterPattern)) {
+                        filteredList.add(item);
                     }
                 }
-            });
+            }
+
+            results.values = filteredList;
+
+            return results;
         }
 
-        if (mCurrentState.equals("req_sent")) {
+        @Override
+        protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
 
-            mFriendRequestDatabase.child(mCurrentUser.getUid()).child(uId).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-
-                    mFriendRequestDatabase.child(uId).child(mCurrentUser.getUid()).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-
-                            sendButton.setEnabled(true);
-                            mCurrentState = "not_friend";
-                            sendButton.setText("Add Friend");
-                        }
-                    });
-                }
-            });
+//            user_list.clear();
+//            user_list.addAll((List) filterResults.values);
+            user_list = (List<User>) filterResults.values;
+            notifyDataSetChanged();
         }
-
-        if (mCurrentState.equals("req_received")) {
-
-            final String currentDate = DateFormat.getDateTimeInstance().format(new Date());
-            mFriendDatabase.child(mCurrentUser.getUid()).child(uId).setValue(currentDate).addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-
-                    mFriendDatabase.child(uId).child(mCurrentUser.getUid()).setValue(currentDate).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-
-                            mFriendRequestDatabase.child(mCurrentUser.getUid()).child(uId).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
-
-                                    mFriendRequestDatabase.child(uId).child(mCurrentUser.getUid()).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-
-                                            sendButton.setEnabled(true);
-                                            mCurrentState = "friends";
-                                            sendButton.setText("UnFriend");
-                                        }
-                                    });
-                                }
-                            });
-
-                        }
-                    });
-                }
-            });
-        }
-    }
+    };
 }

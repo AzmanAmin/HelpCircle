@@ -24,14 +24,14 @@ public class MenuInflaterClass {
         }
         else if (item.getItemId() == R.id.about) {
             Toast.makeText(context,"About",Toast.LENGTH_SHORT).show();
-//            Intent about = new Intent(MainActivity.this, About.class);
-//            context.startActivity(about);
+            Intent about = new Intent(context, AboutActivity.class);
+            context.startActivity(about);
         }
-        else if (item.getItemId() == R.id.allUsers) {
-            Toast.makeText(context, "All Users", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(context, AllUsersActivity.class);
-            context.startActivity(intent);
-        }
+//        else if (item.getItemId() == R.id.allUsers) {
+//            Toast.makeText(context, "All Users", Toast.LENGTH_SHORT).show();
+//            Intent intent = new Intent(context, AllUsersActivity.class);
+//            context.startActivity(intent);
+//        }
 
         return true;
     }
