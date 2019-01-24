@@ -14,6 +14,9 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -24,8 +27,11 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class PanicActivity extends AppCompatActivity implements OnMapReadyCallback,
@@ -35,6 +41,11 @@ public class PanicActivity extends AppCompatActivity implements OnMapReadyCallba
     private GoogleMap mMap;
     private Location myLocation;
     private boolean locationSaved = false;
+    private Button btnSafe;
+    private FirebaseAuth mAuth;
+    private String uid = "";
+    private String userName = "default user";
+    private MySharedPreference sharedPreference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,38 +58,120 @@ public class PanicActivity extends AppCompatActivity implements OnMapReadyCallba
         } else {
             Toast.makeText(this, "Null map fragment", Toast.LENGTH_SHORT).show();
         }
+        btnSafe = findViewById(R.id.btn_mark_as_safe);
         mFireStore = FirebaseFirestore.getInstance();
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 10, this);
+        mAuth = FirebaseAuth.getInstance();
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+            FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+            firestore.collection("Users").document(uid).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if (task.isSuccessful()){
+                        DocumentSnapshot snapshot = task.getResult();
+                        if (snapshot != null && snapshot.exists()){
+                            userName = snapshot.getString("name");
+                            return;
+                        }
+                    }
+
+                    userName = mAuth.getCurrentUser().getDisplayName();
+                }
+            });
+        }
+        sharedPreference = new MySharedPreference(this);
+
+        if (!sharedPreference.getPanicMode()) {
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 10, this);
+            }
+        }else {
+            btnSafe.setVisibility(View.VISIBLE);
+            getUserDangerLocation();
+        }
+
+        btnSafe.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (uid.length() > 0) {
+                    disablePanicMode();
+                }else {
+                    Toast.makeText(PanicActivity.this, "You are not logged in", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void getUserDangerLocation() {
+        if (uid.length() > 0){
+            mFireStore.collection("users_location").document(uid).get()
+                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                            if (task.isSuccessful()){
+                                DocumentSnapshot snapshot = task.getResult();
+                                if (snapshot != null && snapshot.exists()) {
+                                    String lat = ""+snapshot.getDouble("latitude");
+                                    String lon = ""+snapshot.getDouble("longitude");
+                                    if (myLocation == null){
+                                        myLocation = new Location("Chittagong");
+                                    }
+                                    myLocation.setLatitude(Double.parseDouble(lat));
+                                    myLocation.setLongitude(Double.parseDouble(lon));
+                                    moveCamera();
+                                    //Log.e("data23", ""+lat+", "+lon);
+                                }
+                            }
+                        }
+                    });
         }
     }
 
-    private void saveUserLocation(){
+    private void disablePanicMode() {
+        mFireStore.collection("users_location").document(uid)
+                .delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(PanicActivity.this, "Marked you as safe", Toast.LENGTH_SHORT).show();
+                sharedPreference.savePanicMode(false);
+                btnSafe.setVisibility(View.GONE);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(PanicActivity.this, "Error marking you save: " +
+                        e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("ErrorDelete", e.toString());
+            }
+        });
+    }
+
+    private void saveUserLocation() {
         locationSaved = true;
-        UserLocationModel model = new UserLocationModel(myLocation.getLatitude(), myLocation.getLongitude());
-        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        if (mAuth.getCurrentUser() != null) {
-            mFireStore.collection("users_location").document(mAuth.getCurrentUser().getUid())
+        UserLocationModel model = new UserLocationModel(myLocation.getLatitude(), myLocation.getLongitude(), userName);
+        if (uid.length() > 0) {
+            mFireStore.collection("users_location").document(uid)
                     .set(model).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    if (task.isSuccessful()){
+                    if (task.isSuccessful()) {
+                        sharedPreference.savePanicMode(true);
                         Toast.makeText(PanicActivity.this, "Your location is sent to your friends for help", Toast.LENGTH_SHORT).show();
-                    }else {
+                    } else {
                         locationSaved = false;
                         Toast.makeText(PanicActivity.this, "Couldn't sent location for help", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
-        }else {
+        } else {
             Toast.makeText(this, "Couldn't detect user!", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void moveCamera(){
+    private void moveCamera() {
         CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()));
         CameraUpdate zoom = CameraUpdateFactory.zoomTo(11);
         mMap.clear();
@@ -87,7 +180,7 @@ public class PanicActivity extends AppCompatActivity implements OnMapReadyCallba
 
         mp.position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()));
 
-        mp.title("my position");
+        mp.title("My current position");
 
         mMap.addMarker(mp);
         mMap.moveCamera(center);
@@ -107,7 +200,7 @@ public class PanicActivity extends AppCompatActivity implements OnMapReadyCallba
                 if (!locationSaved) {
                     saveUserLocation();
                 }
-            }else {
+            } else {
                 Toast.makeText(this, "Null location", Toast.LENGTH_SHORT).show();
             }
 //            mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
@@ -198,10 +291,10 @@ public class PanicActivity extends AppCompatActivity implements OnMapReadyCallba
     @Override
     public void onLocationChanged(Location location) {
         myLocation = location;
+        moveCamera();
         if (!locationSaved) {
             saveUserLocation();
         }
-        moveCamera();
     }
 
     @Override

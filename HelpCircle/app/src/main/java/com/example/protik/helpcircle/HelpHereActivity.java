@@ -113,7 +113,8 @@ public class HelpHereActivity extends AppCompatActivity implements OnMapReadyCal
 
     private void addMarkers(UserLocationModel location){
         //Log.e("Location", location.getLatitude()+", "+location.getLatitude());
-        map.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Friend1 Location"));
+        map.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),
+                location.getLongitude())).title(location.getUserName()+"'s Location"));
         moveCamera(location);
     }
 
@@ -121,10 +122,6 @@ public class HelpHereActivity extends AppCompatActivity implements OnMapReadyCal
         CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()));
         CameraUpdate zoom = CameraUpdateFactory.zoomTo(11);
 
-        MarkerOptions mp = new MarkerOptions();
-
-        mp.position(new LatLng(userLocation.getLatitude(), userLocation.getLongitude()));
-        map.addMarker(mp);
         map.moveCamera(center);
         map.animateCamera(zoom);
     }

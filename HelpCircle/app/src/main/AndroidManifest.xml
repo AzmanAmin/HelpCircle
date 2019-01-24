@@ -36,7 +36,7 @@
         <activity android:name=".MapActivity" />
         <activity android:name=".PanicActivity" />
         <activity android:name=".HelpHereActivity" />
-        <activity android:name=".AboutActivity"></activity>
+        <activity android:name=".AboutActivity"/>
     </application>
 
 </manifest>
